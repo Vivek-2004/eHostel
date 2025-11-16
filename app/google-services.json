@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "464250340820",
+    "project_id": "hostel-out",
+    "storage_bucket": "hostel-out.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:464250340820:android:721ced4f4cb4b6fc7f4241",
+        "android_client_info": {
+          "package_name": "com.nshm.hostelout"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDk27dNhZh5UczvZA7BoTMvL0xgrArYwKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
