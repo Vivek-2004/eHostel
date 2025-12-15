@@ -1,8 +1,19 @@
 package com.nshm.hostelout.network
 
-import com.nshm.hostelout.model.*
+import com.nshm.hostelout.model.AuthenticateDTO
+import com.nshm.hostelout.model.AuthenticateResponseDTO
+import com.nshm.hostelout.model.ComplaintDTO
+import com.nshm.hostelout.model.LeaveDTO
+import com.nshm.hostelout.model.StudentDTO
+import com.nshm.hostelout.model.TeacherDTO
+import com.nshm.hostelout.model.WardenDTO
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
