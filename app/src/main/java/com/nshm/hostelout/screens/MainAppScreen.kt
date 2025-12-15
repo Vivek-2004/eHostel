@@ -12,6 +12,7 @@ import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -36,28 +37,45 @@ fun MainAppScreen(onSignOut: () -> Unit) {
     val mainNavController = rememberNavController()
     var currentScreenTitle by remember { mutableStateOf(BottomNavItem.Home.title) }
 
+    val userRole = SessionManager.userType
+
+    // Differentiated UI Colors based on Role
+    val topBarColor = when (userRole) {
+        SessionManager.UserRole.STUDENT -> MaterialTheme.colorScheme.primary
+        SessionManager.UserRole.TEACHER -> Color(0xFF00796B) // Teal for Teacher
+        SessionManager.UserRole.WARDEN -> Color(0xFF6A1B9A) // Purple for Warden
+    }
+
+    val topBarContentColor = Color.White
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentScreenTitle) },
+                title = {
+                    // Differentiated Title
+                    Text("$currentScreenTitle (${userRole.name.lowercase().capitalize()})")
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.primary
+                    containerColor = topBarColor,
+                    titleContentColor = topBarContentColor,
+                    actionIconContentColor = topBarContentColor
                 )
             )
         },
         bottomBar = {
             MainBottomNavigation(
                 navController = mainNavController,
+                userRole = userRole,
                 onTitleChange = { currentScreenTitle = it }
             )
         },
         floatingActionButton = {
             // Only Students can add requests via FAB on Home Screen
-            // (Complaints screen has its own internal FAB)
             if (currentScreenTitle == BottomNavItem.Home.title &&
-                SessionManager.userType == SessionManager.UserRole.STUDENT) {
+                userRole == SessionManager.UserRole.STUDENT) {
                 FloatingActionButton(
+                    containerColor = topBarColor,
+                    contentColor = topBarContentColor,
                     onClick = { mainNavController.navigate("new_request") }
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "New Leave Request")
@@ -80,7 +98,7 @@ fun MainAppScreen(onSignOut: () -> Unit) {
 
             composable(BottomNavItem.Profile.route) { ProfileScreen(onSignOut = onSignOut) }
 
-            // Nested routes that hide bottom bar conceptually (though it stays visible unless hidden)
+            // Nested routes
             composable("new_request") {
                 LeaveFormScreen(onClose = { mainNavController.popBackStack() })
             }
@@ -94,9 +112,16 @@ fun MainAppScreen(onSignOut: () -> Unit) {
 @Composable
 fun MainBottomNavigation(
     navController: NavHostController,
+    userRole: SessionManager.UserRole,
     onTitleChange: (String) -> Unit
 ) {
-    val items = listOf(BottomNavItem.Home, BottomNavItem.Complaints, BottomNavItem.Profile)
+    // Logic: Teachers do not need to see Complaints
+    val items = if (userRole == SessionManager.UserRole.TEACHER) {
+        listOf(BottomNavItem.Home, BottomNavItem.Profile)
+    } else {
+        listOf(BottomNavItem.Home, BottomNavItem.Complaints, BottomNavItem.Profile)
+    }
+
     var selectedItemIndex by remember { mutableStateOf(0) }
 
     // Update selected index based on current route

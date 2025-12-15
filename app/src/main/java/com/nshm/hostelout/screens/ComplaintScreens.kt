@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -31,20 +32,31 @@ fun ComplaintListScreen(
     var isLoading by remember { mutableStateOf(true) }
 
     fun fetchComplaints() {
+        // Safety check: Teachers shouldn't be here
+        if (SessionManager.userType == SessionManager.UserRole.TEACHER) {
+            isLoading = false
+            return
+        }
+
         isLoading = true
         scope.launch {
             try {
                 val response = RetrofitClient.apiService.getAllComplaints()
                 if (response.isSuccessful) {
                     val allComplaints = response.body() ?: emptyList()
-                    // If you want to filter for students:
-                    if (SessionManager.userType == SessionManager.UserRole.STUDENT) {
-                        complaints = allComplaints.filter { it.createdByStudentId == SessionManager.userId }
+
+                    // Filter Logic:
+                    // Student: Sees only their own.
+                    // Warden: Sees all.
+                    // Teacher: Sees none (handled by empty list / nav hiding).
+
+                    complaints = if (SessionManager.userType == SessionManager.UserRole.STUDENT) {
+                        allComplaints.filter { it.createdByStudentId == SessionManager.userId }
                     } else {
-                        complaints = allComplaints
-                    }
-                    // Sort by newest first (assuming higher ID is newer if createdAt isn't parsable string)
-                    complaints = complaints.reversed()
+                        // Warden
+                        allComplaints
+                    }.reversed()
+
                 } else {
                     Toast.makeText(context, "Failed to load complaints", Toast.LENGTH_SHORT).show()
                 }
@@ -63,8 +75,11 @@ fun ComplaintListScreen(
     Scaffold(
         floatingActionButton = {
             if (SessionManager.userType == SessionManager.UserRole.STUDENT) {
-                FloatingActionButton(onClick = onNavigateToCreate) {
-                    Icon(Icons.Default.Add, contentDescription = "New Complaint")
+                FloatingActionButton(
+                    onClick = onNavigateToCreate,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "New Complaint", tint = Color.White)
                 }
             }
         }
@@ -72,7 +87,12 @@ fun ComplaintListScreen(
         Column(modifier = Modifier
             .fillMaxSize()
             .padding(padding)) {
-            if (isLoading) {
+
+            if (SessionManager.userType == SessionManager.UserRole.TEACHER) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Access Denied")
+                }
+            } else if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
@@ -96,29 +116,55 @@ fun ComplaintListScreen(
 
 @Composable
 fun ComplaintItemCard(complaint: ComplaintDTO) {
+    val isResolved = complaint.status.equals("Resolved", ignoreCase = true)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(3.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Complaint #${complaint.id}", fontWeight = FontWeight.Bold)
                 Text(
-                    text = complaint.status ?: "Pending",
-                    color = if (complaint.status == "Resolved") Color(0xFF388E3C) else Color(0xFFF57C00),
-                    style = MaterialTheme.typography.labelSmall
+                    text = "Complaint #${complaint.id}",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
                 )
+
+                // Status Badge
+                Surface(
+                    color = if (isResolved) Color(0xFFC8E6C9) else Color(0xFFFFE0B2),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = complaint.status ?: "Pending",
+                        color = if (isResolved) Color(0xFF1B5E20) else Color(0xFFE65100),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = complaint.message)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = complaint.message,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             if (!complaint.createdAt.isNullOrEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Divider(color = Color.LightGray.copy(alpha = 0.3f))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Created: ${complaint.createdAt}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
             }
@@ -152,6 +198,12 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            Text(
+                "Describe your issue",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = message,
                 onValueChange = { message = it },
@@ -192,10 +244,10 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 enabled = !isLoading
             ) {
-                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 else Text("Submit Complaint")
             }
         }
