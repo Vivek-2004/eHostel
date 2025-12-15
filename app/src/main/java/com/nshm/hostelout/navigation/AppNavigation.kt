@@ -8,8 +8,8 @@ import com.nshm.hostelout.screens.ForgotPasswordScreen
 import com.nshm.hostelout.screens.LoginScreen
 import com.nshm.hostelout.screens.MainAppScreen
 import com.nshm.hostelout.screens.SignUpScreen
+import com.nshm.hostelout.utils.SessionManager
 
-// Define route constants
 object Routes {
     const val LOGIN = "login"
     const val SIGN_UP = "signup"
@@ -18,20 +18,18 @@ object Routes {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(startDestination: String = Routes.LOGIN) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = Routes.LOGIN) {
+    NavHost(navController = navController, startDestination = startDestination) {
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate(Routes.MAIN_APP) {
-                        // Pop all auth screens off the back stack
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
                 onNavigateToSignUp = { navController.navigate(Routes.SIGN_UP) }
-                // Removed onNavigateToForgotPassword as it was removed from LoginScreen
             )
         }
 
@@ -56,8 +54,9 @@ fun AppNavigation() {
         composable(Routes.MAIN_APP) {
             MainAppScreen(
                 onSignOut = {
+                    // Clear session on sign out
+                    SessionManager.clearSession()
                     navController.navigate(Routes.LOGIN) {
-                        // Pop all main app screens off the back stack
                         popUpTo(Routes.MAIN_APP) { inclusive = true }
                     }
                 }

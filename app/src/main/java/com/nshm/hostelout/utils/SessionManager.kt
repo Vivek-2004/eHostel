@@ -1,27 +1,54 @@
 package com.nshm.hostelout.utils
 
-import com.nshm.hostelout.model.StudentDTO
-import com.nshm.hostelout.model.TeacherDTO
-import com.nshm.hostelout.model.WardenDTO
+import android.content.Context
+import android.content.SharedPreferences
 
 object SessionManager {
-    var userId: Long = -1
-    var userType: UserRole = UserRole.STUDENT
+    private const val PREF_NAME = "EHostelSession"
+    private const val KEY_USER_ID = "user_id"
+    private const val KEY_USER_TYPE = "user_type"
 
-    // Cache for profile details
-    var currentStudent: StudentDTO? = null
-    var currentTeacher: TeacherDTO? = null
-    var currentWarden: WardenDTO? = null
+    private lateinit var prefs: SharedPreferences
 
-    fun clearSession() {
-        userId = -1
-        userType = UserRole.STUDENT
-        currentStudent = null
-        currentTeacher = null
-        currentWarden = null
+    // Initialize this in MainActivity
+    fun init(context: Context) {
+        prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
     }
 
     enum class UserRole {
         STUDENT, TEACHER, WARDEN
+    }
+
+    var userId: Long
+        get() = if (::prefs.isInitialized) prefs.getLong(KEY_USER_ID, -1) else -1
+        set(value) {
+            if (::prefs.isInitialized) {
+                prefs.edit().putLong(KEY_USER_ID, value).apply()
+            }
+        }
+
+    var userType: UserRole
+        get() {
+            if (!::prefs.isInitialized) return UserRole.STUDENT
+            val type = prefs.getString(KEY_USER_TYPE, UserRole.STUDENT.name)
+            return try {
+                UserRole.valueOf(type!!)
+            } catch (e: Exception) {
+                UserRole.STUDENT
+            }
+        }
+        set(value) {
+            if (::prefs.isInitialized) {
+                prefs.edit().putString(KEY_USER_TYPE, value.name).apply()
+            }
+        }
+
+    val isLoggedIn: Boolean
+        get() = userId != -1L
+
+    fun clearSession() {
+        if (::prefs.isInitialized) {
+            prefs.edit().clear().apply()
+        }
     }
 }

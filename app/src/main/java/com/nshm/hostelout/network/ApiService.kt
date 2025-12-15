@@ -53,4 +53,11 @@ interface ApiService {
         @Path("wardenId") wardenId: Long,
         @Query("isApproved") isApproved: Boolean
     ): Response<LeaveDTO>
+
+    // --- Complaints ---
+    @POST("api/complaints")
+    suspend fun createComplaint(@Body dto: ComplaintDTO): Response<ComplaintDTO>
+
+    @GET("api/complaints")
+    suspend fun getAllComplaints(): Response<List<ComplaintDTO>>
 }
