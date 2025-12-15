@@ -1,31 +1,19 @@
 package com.nshm.hostelout.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.nshm.hostelout.model.LeaveDTO
+import com.nshm.hostelout.network.RetrofitClient
+import com.nshm.hostelout.utils.SessionManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +21,10 @@ fun LeaveFormScreen(onClose: () -> Unit) {
     var fromDate by remember { mutableStateOf("") }
     var toDate by remember { mutableStateOf("") }
     var reason by remember { mutableStateOf("") }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -58,20 +50,21 @@ fun LeaveFormScreen(onClose: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium
             )
 
-            // In a real app, you'd replace these with DatePicker dialogs
             OutlinedTextField(
                 value = fromDate,
                 onValueChange = { fromDate = it },
                 label = { Text("From Date (YYYY-MM-DD)") },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) }
+                leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                placeholder = { Text("2024-01-01") }
             )
             OutlinedTextField(
                 value = toDate,
                 onValueChange = { toDate = it },
                 label = { Text("To Date (YYYY-MM-DD)") },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) }
+                leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                placeholder = { Text("2024-01-05") }
             )
             OutlinedTextField(
                 value = reason,
@@ -83,12 +76,41 @@ fun LeaveFormScreen(onClose: () -> Unit) {
             )
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = { /* TODO: Submit to Firebase */ onClose() },
+                onClick = {
+                    if (fromDate.isBlank() || toDate.isBlank() || reason.isBlank()) {
+                        Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    isSubmitting = true
+                    scope.launch {
+                        try {
+                            val leave = LeaveDTO(
+                                studentCollegeRegistrationNo = SessionManager.userId,
+                                fromDate = fromDate,
+                                toDate = toDate,
+                                reason = reason
+                            )
+                            val response = RetrofitClient.apiService.applyLeave(leave)
+                            if (response.isSuccessful) {
+                                Toast.makeText(context, "Request Submitted", Toast.LENGTH_SHORT).show()
+                                onClose()
+                            } else {
+                                Toast.makeText(context, "Failed: ${response.code()}", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        } finally {
+                            isSubmitting = false
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(50.dp),
+                enabled = !isSubmitting
             ) {
-                Text("Submit Request")
+                if (isSubmitting) CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                else Text("Submit Request")
             }
         }
     }

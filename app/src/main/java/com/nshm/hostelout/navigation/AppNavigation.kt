@@ -21,10 +21,6 @@ object Routes {
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // A simple NavHost
-    // For a real app, you'd have logic here to check if the user
-    // is already logged in, and if so, start at Routes.MAIN_APP
-
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
         composable(Routes.LOGIN) {
             LoginScreen(
@@ -34,8 +30,8 @@ fun AppNavigation() {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
-                onNavigateToSignUp = { navController.navigate(Routes.SIGN_UP) },
-                onNavigateToForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) }
+                onNavigateToSignUp = { navController.navigate(Routes.SIGN_UP) }
+                // Removed onNavigateToForgotPassword as it was removed from LoginScreen
             )
         }
 

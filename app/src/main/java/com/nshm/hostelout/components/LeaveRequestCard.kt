@@ -19,15 +19,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nshm.hostelout.screens.LeaveRequest
+import com.nshm.hostelout.model.LeaveDTO
 
 @Composable
-fun LeaveRequestCard(request: LeaveRequest) {
+fun LeaveRequestCard(request: LeaveDTO) {
+    // Map Backend Status strings to Colors
     val statusColor = when (request.status) {
-        "Approved" -> Color(0xFF388E3C) // Green
-        "Pending" -> Color(0xFFF57C00) // Orange
-        "Rejected" -> Color(0xFFD32F2F) // Red
-        else -> MaterialTheme.colorScheme.onSurface
+        "Approved by Warden" -> Color(0xFF388E3C) // Green (Final Approval)
+        "Approved by Teacher" -> Color(0xFFF57C00) // Orange (Intermediate)
+        "Rejected by Teacher", "Rejected by Warden" -> Color(0xFFD32F2F) // Red
+        else -> Color.Gray // "Applied" or null is treated as Pending
+    }
+
+    // Display friendly status text
+    val displayStatus = when (request.status) {
+        null -> "PENDING"
+        "Applied" -> "PENDING"
+        else -> request.status!!.uppercase()
     }
 
     Card(
@@ -45,7 +53,7 @@ fun LeaveRequestCard(request: LeaveRequest) {
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    text = request.status.uppercase(),
+                    text = displayStatus,
                     color = statusColor,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp

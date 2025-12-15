@@ -1,43 +1,28 @@
 package com.nshm.hostelout.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.nshm.hostelout.model.AuthenticateDTO
+import com.nshm.hostelout.model.StudentDTO
+import com.nshm.hostelout.network.RetrofitClient
+import com.nshm.hostelout.utils.SessionManager
+import kotlinx.coroutines.launch
 
-// This composable is a wrapper for all auth screens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthScreenWrapper(
@@ -77,7 +62,7 @@ fun AuthScreenWrapper(
                 style = MaterialTheme.typography.displayMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             content()
         }
     }
@@ -86,13 +71,33 @@ fun AuthScreenWrapper(
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onNavigateToSignUp: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit
+    onNavigateToSignUp: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var selectedRole by remember { mutableStateOf(SessionManager.UserRole.STUDENT) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     AuthScreenWrapper(title = "Sign In") {
+        // Role Selection
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            SessionManager.UserRole.values().forEach { role ->
+                FilterChip(
+                    selected = selectedRole == role,
+                    onClick = { selectedRole = role },
+                    label = { Text(role.name.lowercase().capitalize()) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -114,20 +119,52 @@ fun LoginScreen(
             singleLine = true
         )
         Spacer(modifier = Modifier.height(24.dp))
+
         Button(
-            onClick = { /* TODO: Add Firebase Login Logic */ onLoginSuccess() },
+            onClick = {
+                if(email.isBlank() || password.isBlank()) {
+                    Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+                isLoading = true
+                scope.launch {
+                    try {
+                        val authDto = AuthenticateDTO(email, password)
+                        val response = when(selectedRole) {
+                            SessionManager.UserRole.STUDENT -> RetrofitClient.apiService.authenticateStudent(authDto)
+                            SessionManager.UserRole.TEACHER -> RetrofitClient.apiService.authenticateTeacher(authDto)
+                            SessionManager.UserRole.WARDEN -> RetrofitClient.apiService.authenticateWarden(authDto)
+                        }
+
+                        if (response.isSuccessful && response.body()?.isCorrectPass == true) {
+                            val body = response.body()!!
+                            SessionManager.userId = body.userId
+                            SessionManager.userType = selectedRole
+                            onLoginSuccess()
+                        } else {
+                            Toast.makeText(context, response.body()?.message ?: "Login Failed", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
+                .height(50.dp),
+            enabled = !isLoading
         ) {
-            Text("Sign In")
+            if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+            else Text("Sign In")
         }
+
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onNavigateToForgotPassword) {
-            Text("Forgot Password?")
-        }
-        TextButton(onClick = onNavigateToSignUp) {
-            Text("Don't have an account? Sign Up")
+        if(selectedRole == SessionManager.UserRole.STUDENT) {
+            TextButton(onClick = onNavigateToSignUp) {
+                Text("Student? Create Account")
+            }
         }
     }
 }
@@ -140,93 +177,73 @@ fun SignUpScreen(
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var regNo by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var dept by remember { mutableStateOf("") }
+    var room by remember { mutableStateOf("") }
+    var guardianPhone by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     AuthScreenWrapper(
-        title = "Create Account",
+        title = "Student Registration",
         showBackButton = true,
         onBackClicked = onNavigateToLogin
     ) {
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Full Name") },
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            singleLine = true
-        )
+        // Scrollable column if fields are many
+        // For brevity, keeping simple
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation(), singleLine = true)
+        OutlinedTextField(value = regNo, onValueChange = { regNo = it }, label = { Text("Registration No.") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = dept, onValueChange = { dept = it }, label = { Text("Department") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = room, onValueChange = { room = it }, label = { Text("Room Number") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = guardianPhone, onValueChange = { guardianPhone = it }, label = { Text("Guardian Phone") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+
         Spacer(modifier = Modifier.height(24.dp))
         Button(
-            onClick = { /* TODO: Add Firebase Sign Up Logic */ onSignUpSuccess() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
+            onClick = {
+                isLoading = true
+                scope.launch {
+                    try {
+                        val student = StudentDTO(
+                            name = name, email = email, password = password,
+                            registrationNumber = regNo, department = dept,
+                            roomNumber = room, phone = phone, guardianPhone = guardianPhone
+                        )
+                        val response = RetrofitClient.apiService.registerStudent(student)
+                        if (response.isSuccessful) {
+                            Toast.makeText(context, "Registered Successfully!", Toast.LENGTH_SHORT).show()
+                            onSignUpSuccess()
+                        } else {
+                            Toast.makeText(context, "Registration Failed", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            enabled = !isLoading
         ) {
-            Text("Create Account")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onNavigateToLogin) {
-            Text("Already have an account? Sign In")
+            if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+            else Text("Create Account")
         }
     }
 }
 
+// Keeping ForgotPassword placeholder for navigation structure
 @Composable
 fun ForgotPasswordScreen(
     onPasswordResetSent: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-
-    AuthScreenWrapper(
-        title = "Reset Password",
-        showBackButton = true,
-        onBackClicked = onNavigateToLogin
-    ) {
-        Text(
-            text = "Enter your email address and we'll send you a link to reset your password.",
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = { /* TODO: Add Firebase Reset Logic */ onPasswordResetSent() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-            Text("Send Reset Link")
-        }
+    AuthScreenWrapper(title = "Reset Password", showBackButton = true, onBackClicked = onNavigateToLogin) {
+        Text("Contact your administrator to reset password.")
     }
 }
