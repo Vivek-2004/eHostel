@@ -201,7 +201,7 @@ fun LoginScreen(
         focusedLabelColor = Color(0xFF667eea),
         unfocusedBorderColor = Color(0xFFBDBDBD),
         focusedTextColor = Color(0xFF212121),
-        unfocusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF424242),
         unfocusedLabelColor = Color(0xFF757575)
     )
 
@@ -209,7 +209,7 @@ fun LoginScreen(
         Text(
             text = "Select Your Role",
             style = MaterialTheme.typography.labelLarge,
-            color = Color(0xFF424242),
+            color = Color(0xFF212121),
             modifier = Modifier.padding(bottom = 6.dp)
         )
 
@@ -225,7 +225,7 @@ fun LoginScreen(
                         Text(
                             text = role.name.lowercase().replaceFirstChar { it.uppercase() },
                             fontWeight = if (selectedRole == role) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selectedRole == role) Color.White else Color(0xFF424242),
+                            color = if (selectedRole == role) Color.White else Color(0xFF212121),
                             fontSize = if (selectedRole == role) 11.sp else 12.sp
                         )
                     },
@@ -234,7 +234,7 @@ fun LoginScreen(
                         selectedContainerColor = Color(0xFF667eea),
                         selectedLabelColor = Color.White,
                         containerColor = Color(0xFFF5F5F5),
-                        labelColor = Color(0xFF424242)
+                        labelColor = Color(0xFF212121)
                     )
                 )
             }
@@ -366,7 +366,7 @@ fun SignUpScreen(
         focusedLabelColor = Color(0xFF667eea),
         unfocusedBorderColor = Color(0xFFBDBDBD),
         focusedTextColor = Color(0xFF212121),
-        unfocusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF424242),
         unfocusedLabelColor = Color(0xFF757575)
     )
 
@@ -486,7 +486,7 @@ fun ForgotPasswordScreen(onPasswordResetSent: () -> Unit, onNavigateToLogin: () 
         Text(
             "Contact your administrator to reset password.",
             style = MaterialTheme.typography.bodyLarge,
-            color = Color(0xFF424242)
+            color = Color(0xFF212121)
         )
     }
 }

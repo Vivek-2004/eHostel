@@ -103,22 +103,33 @@ fun HomeScreen() {
     LaunchedEffect(Unit) { fetchData() }
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA), floatingActionButton = {
+        containerColor = Color(0xFFF5F7FA),
+        floatingActionButton = {
             // Refresh Button for Everyone
             FloatingActionButton(
                 onClick = { fetchData() },
                 containerColor = when (userRole) {
                     SessionManager.UserRole.TEACHER -> Color(0xFF00897B)
                     SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2)
+                    else -> Color.White
+                },
+                contentColor = when (userRole) {
+                    SessionManager.UserRole.TEACHER -> Color.White
+                    SessionManager.UserRole.WARDEN -> Color.White
                     else -> Color(0xFF667eea)
                 },
-                contentColor = Color.White,
                 shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                elevation = FloatingActionButtonDefaults.elevation(if (userRole == SessionManager.UserRole.STUDENT) 6.dp else 8.dp),
+                modifier = if (userRole == SessionManager.UserRole.STUDENT) Modifier.size(48.dp) else Modifier
             ) {
-                Icon(Icons.Default.Refresh, "Refresh")
+                Icon(
+                    Icons.Default.Refresh,
+                    "Refresh",
+                    modifier = if (userRole == SessionManager.UserRole.STUDENT) Modifier.size(24.dp) else Modifier
+                )
             }
-        }) { padding ->
+        }
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -140,7 +151,11 @@ fun HomeScreen() {
                         modifier = Modifier.size(48.dp),
                         tint = Color(0xFFBDBDBD)
                     )
-                    Text("No leave requests", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "No leave requests",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color(0xFF212121)
+                    )
                 }
             } else {
                 LazyColumn(
@@ -216,7 +231,12 @@ fun LeaveItemCard(leave: LeaveDTO, userRole: SessionManager.UserRole, onAction: 
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("#${leave.id}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(
+                    "#${leave.id}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = Color(0xFF212121)
+                )
                 Surface(color = statusBg, shape = RoundedCornerShape(20.dp)) {
                     Text(
                         leave.status ?: "Unknown",
@@ -232,29 +252,41 @@ fun LeaveItemCard(leave: LeaveDTO, userRole: SessionManager.UserRole, onAction: 
                 modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("From", fontSize = 12.sp, color = Color.Gray); Text(
-                    leave.fromDate, fontWeight = FontWeight.Bold
-                )
+                    Text("From", fontSize = 12.sp, color = Color(0xFF757575))
+                    Text(
+                        leave.fromDate,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF212121)
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        "To", fontSize = 12.sp, color = Color.Gray
-                    ); Text(leave.toDate, fontWeight = FontWeight.Bold)
+                        "To", fontSize = 12.sp, color = Color(0xFF757575)
+                    )
+                    Text(
+                        leave.toDate,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF212121)
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text("Reason: ${leave.reason}", fontSize = 14.sp)
+            Text(
+                "Reason: ${leave.reason}",
+                fontSize = 14.sp,
+                color = Color(0xFF424242)
+            )
             if (canAct) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
                         onClick = { onAction(false) }, modifier = Modifier.weight(1f)
-                    ) { Text("Reject", color = Color.Red) }
+                    ) { Text("Reject", color = Color(0xFFD32F2F)) }
                     Button(
                         onClick = { onAction(true) },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF43A047))
-                    ) { Text("Approve") }
+                    ) { Text("Approve", color = Color.White) }
                 }
             }
         }

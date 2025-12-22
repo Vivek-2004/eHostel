@@ -67,7 +67,7 @@ fun LeaveFormScreen(onClose: () -> Unit) {
         focusedLabelColor = Color(0xFF667eea),
         unfocusedBorderColor = Color(0xFFE0E0E0),
         focusedTextColor = Color(0xFF212121),
-        unfocusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF424242),
         unfocusedLabelColor = Color(0xFF757575)
     )
 
@@ -174,7 +174,7 @@ fun LeaveFormScreen(onClose: () -> Unit) {
                         onValueChange = { fromDate = it },
                         label = { Text("From Date") },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("YYYY-MM-DD", color = Color.Gray) },
+                        placeholder = { Text("YYYY-MM-DD", color = Color(0xFF9E9E9E)) },
                         shape = RoundedCornerShape(14.dp),
                         colors = textFieldColors
                     )
@@ -183,7 +183,7 @@ fun LeaveFormScreen(onClose: () -> Unit) {
                         onValueChange = { toDate = it },
                         label = { Text("To Date") },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("YYYY-MM-DD", color = Color.Gray) },
+                        placeholder = { Text("YYYY-MM-DD", color = Color(0xFF9E9E9E)) },
                         shape = RoundedCornerShape(14.dp),
                         colors = textFieldColors
                     )
@@ -261,10 +261,14 @@ fun LeaveFormScreen(onClose: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF667eea)),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                if (isSubmitting) CircularProgressIndicator(color = Color.White) else Text(
+                if (isSubmitting) CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp)
+                ) else Text(
                     "Submit Request",
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             }
         }

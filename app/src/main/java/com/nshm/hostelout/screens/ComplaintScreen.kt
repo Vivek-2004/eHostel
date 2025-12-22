@@ -109,16 +109,18 @@ fun ComplaintListScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.End
             ) {
-                // Refresh Button - Always visible if allowed
-                FloatingActionButton(
-                    onClick = { fetchComplaints() },
-                    containerColor = Color.White,
-                    contentColor = Color(0xFFFF6B6B),
-                    shape = CircleShape,
-                    elevation = FloatingActionButtonDefaults.elevation(6.dp),
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(Icons.Default.Refresh, "Refresh", modifier = Modifier.size(24.dp))
+                // Refresh Button - Always visible for Student and Warden
+                if (SessionManager.userType != SessionManager.UserRole.TEACHER) {
+                    FloatingActionButton(
+                        onClick = { fetchComplaints() },
+                        containerColor = Color.White,
+                        contentColor = Color(0xFFFF6B6B),
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(6.dp),
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(Icons.Default.Refresh, "Refresh", modifier = Modifier.size(24.dp))
+                    }
                 }
 
                 // Add Button (Student Only)
@@ -154,7 +156,7 @@ fun ComplaintListScreen(
                     Text(
                         "Access Denied",
                         style = MaterialTheme.typography.headlineSmall,
-                        color = Color(0xFF424242)
+                        color = Color(0xFF212121)
                     )
                 }
             } else if (isLoading) {
@@ -176,7 +178,7 @@ fun ComplaintListScreen(
                     Text(
                         "No complaints yet",
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color(0xFF424242)
+                        color = Color(0xFF212121)
                     )
                 }
             } else {
@@ -252,7 +254,7 @@ fun ComplaintItemCard(complaint: ComplaintDTO) {
                     Text(
                         complaint.createdAt,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+                        color = Color(0xFF757575)
                     )
                 }
             }
@@ -273,7 +275,7 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
         focusedLabelColor = Color(0xFFFF6B6B),
         unfocusedBorderColor = Color(0xFFE0E0E0),
         focusedTextColor = Color(0xFF212121),
-        unfocusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF424242),
         unfocusedLabelColor = Color(0xFF757575)
     )
 
@@ -354,7 +356,8 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
         ) {
             if (isLoading) CircularProgressIndicator(color = Color.White) else Text(
                 "Submit Complaint",
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
         }
     }

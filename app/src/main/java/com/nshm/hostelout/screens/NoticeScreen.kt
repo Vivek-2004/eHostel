@@ -104,7 +104,9 @@ fun NoticeScreen(onNavigateToCreate: () -> Unit) {
                 FloatingActionButton(
                     onClick = { fetchNotices() },
                     containerColor = Color.White,
-                    contentColor = Color(0xFF667eea),
+                    contentColor = if (userRole == SessionManager.UserRole.WARDEN) Color(0xFF7B1FA2) else Color(
+                        0xFF667eea
+                    ),
                     shape = CircleShape,
                     elevation = FloatingActionButtonDefaults.elevation(6.dp),
                     modifier = Modifier.size(48.dp)
@@ -156,7 +158,7 @@ fun NoticeScreen(onNavigateToCreate: () -> Unit) {
                     Text(
                         "No Notices Published",
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color(0xFF757575)
+                        color = Color(0xFF212121)
                     )
                 }
             } else {
@@ -173,7 +175,7 @@ fun NoticeScreen(onNavigateToCreate: () -> Unit) {
                                     try {
                                         val res =
                                             RetrofitClient.apiService.deleteNotice(notice.id!!)
-                                        // 200 OK means success, even if body is plain text
+                                        // Check only HTTP status, don't try to parse body
                                         if (res.isSuccessful) {
                                             Toast.makeText(
                                                 context,
@@ -189,9 +191,11 @@ fun NoticeScreen(onNavigateToCreate: () -> Unit) {
                                             ).show()
                                         }
                                     } catch (e: Exception) {
+                                        // More specific error handling
+                                        val errorMsg = e.message ?: "Unknown error"
                                         Toast.makeText(
                                             context,
-                                            "Error: ${e.message}",
+                                            "Error: $errorMsg",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -252,7 +256,7 @@ fun NoticeItemCard(notice: NoticeDTO, isWarden: Boolean, onDelete: () -> Unit) {
             Text(
                 text = notice.body,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF424242),
+                color = Color(0xFF212121),
                 lineHeight = 20.sp
             )
         }
@@ -273,17 +277,23 @@ fun NoticeFormScreen(onBack: () -> Unit) {
         focusedLabelColor = Color(0xFF7B1FA2),
         unfocusedBorderColor = Color(0xFFBDBDBD),
         focusedTextColor = Color(0xFF212121),
-        unfocusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF424242),
         unfocusedLabelColor = Color(0xFF757575)
     )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Publish Notice") },
+                title = {
+                    Text(
+                        "Publish Notice",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF212121)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.Default.ArrowBack, "Back", tint = Color(0xFF7B1FA2))
                     }
                 }
             )
@@ -352,9 +362,18 @@ fun NoticeFormScreen(onBack: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B1FA2))
             ) {
                 if (isSubmitting) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
                 } else {
-                    Text("Publish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Publish",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
         }
