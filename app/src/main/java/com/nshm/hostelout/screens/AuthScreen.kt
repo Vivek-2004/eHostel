@@ -176,7 +176,6 @@ fun AuthScreenWrapper(
                     }
                 }
 
-                // Extra space for scrollable content to clear bottom
                 if (enableScroll) {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -196,6 +195,15 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = Color(0xFF667eea),
+        focusedLabelColor = Color(0xFF667eea),
+        unfocusedBorderColor = Color(0xFFBDBDBD),
+        focusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF212121),
+        unfocusedLabelColor = Color(0xFF757575)
+    )
 
     AuthScreenWrapper(title = "Welcome Back") {
         Text(
@@ -235,15 +243,12 @@ fun LoginScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email Address", color = Color(0xFF757575)) },
+            label = { Text("Email Address") },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.Email, null, tint = Color(0xFF667eea)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF667eea),
-                focusedLabelColor = Color(0xFF667eea)
-            )
+            colors = textFieldColors
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -251,16 +256,13 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password", color = Color(0xFF757575)) },
+            label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.Lock, null, tint = Color(0xFF667eea)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF667eea),
-                focusedLabelColor = Color(0xFF667eea)
-            )
+            colors = textFieldColors
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -276,9 +278,17 @@ fun LoginScreen(
                     try {
                         val authDto = AuthenticateDTO(email, password)
                         val response = when (selectedRole) {
-                            SessionManager.UserRole.STUDENT -> RetrofitClient.apiService.authenticateStudent(authDto)
-                            SessionManager.UserRole.TEACHER -> RetrofitClient.apiService.authenticateTeacher(authDto)
-                            SessionManager.UserRole.WARDEN -> RetrofitClient.apiService.authenticateWarden(authDto)
+                            SessionManager.UserRole.STUDENT -> RetrofitClient.apiService.authenticateStudent(
+                                authDto
+                            )
+
+                            SessionManager.UserRole.TEACHER -> RetrofitClient.apiService.authenticateTeacher(
+                                authDto
+                            )
+
+                            SessionManager.UserRole.WARDEN -> RetrofitClient.apiService.authenticateWarden(
+                                authDto
+                            )
                         }
 
                         if (response.isSuccessful && response.body()?.isCorrectPass == true) {
@@ -287,7 +297,11 @@ fun LoginScreen(
                             SessionManager.userType = selectedRole
                             onLoginSuccess()
                         } else {
-                            Toast.makeText(context, response.body()?.message ?: "Login Failed", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                response.body()?.message ?: "Login Failed",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     } catch (e: Exception) {
                         Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -296,13 +310,19 @@ fun LoginScreen(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             enabled = !isLoading,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF667eea)),
             shape = MaterialTheme.shapes.medium
         ) {
             if (isLoading) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
@@ -314,7 +334,11 @@ fun LoginScreen(
                 onClick = onNavigateToSignUp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("New Student? Create Account", color = Color(0xFF667eea), fontWeight = FontWeight.SemiBold)
+                Text(
+                    "New Student? Create Account",
+                    color = Color(0xFF667eea),
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -339,7 +363,11 @@ fun SignUpScreen(
 
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = Color(0xFF667eea),
-        focusedLabelColor = Color(0xFF667eea)
+        focusedLabelColor = Color(0xFF667eea),
+        unfocusedBorderColor = Color(0xFFBDBDBD),
+        focusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF212121),
+        unfocusedLabelColor = Color(0xFF757575)
     )
 
     AuthScreenWrapper(
@@ -359,9 +387,13 @@ fun SignUpScreen(
                 modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors
             )
             OutlinedTextField(
-                value = password, onValueChange = { password = it }, label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation(),
-                singleLine = true, colors = textFieldColors
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                colors = textFieldColors
             )
             OutlinedTextField(
                 value = regNo, onValueChange = { regNo = it }, label = { Text("Registration No.") },
@@ -380,8 +412,12 @@ fun SignUpScreen(
                 modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors
             )
             OutlinedTextField(
-                value = guardianPhone, onValueChange = { guardianPhone = it }, label = { Text("Guardian Phone") },
-                modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors
+                value = guardianPhone,
+                onValueChange = { guardianPhone = it },
+                label = { Text("Guardian Phone") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = textFieldColors
             )
 
             Button(
@@ -396,27 +432,44 @@ fun SignUpScreen(
                             )
                             val response = RetrofitClient.apiService.registerStudent(student)
                             if (response.isSuccessful) {
-                                Toast.makeText(context, "Registered Successfully! Please Login.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Registered Successfully! Please Login.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 onSignUpSuccess()
                             } else {
-                                Toast.makeText(context, "Registration Failed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Registration Failed", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         } catch (e: Exception) {
-                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+                                .show()
                         } finally {
                             isLoading = false
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF667eea)),
                 shape = MaterialTheme.shapes.medium
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
                 } else {
-                    Text("Create Account", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        "Create Account",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
         }
@@ -425,7 +478,15 @@ fun SignUpScreen(
 
 @Composable
 fun ForgotPasswordScreen(onPasswordResetSent: () -> Unit, onNavigateToLogin: () -> Unit) {
-    AuthScreenWrapper(title = "Reset Password", showBackButton = true, onBackClicked = onNavigateToLogin) {
-        Text("Contact your administrator to reset password.", style = MaterialTheme.typography.bodyLarge, color = Color(0xFF424242))
+    AuthScreenWrapper(
+        title = "Reset Password",
+        showBackButton = true,
+        onBackClicked = onNavigateToLogin
+    ) {
+        Text(
+            "Contact your administrator to reset password.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color(0xFF424242)
+        )
     }
 }

@@ -109,7 +109,7 @@ fun ComplaintListScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.End
             ) {
-                // Refresh Button
+                // Refresh Button - Always visible if allowed
                 FloatingActionButton(
                     onClick = { fetchComplaints() },
                     containerColor = Color.White,
@@ -222,7 +222,12 @@ fun ComplaintItemCard(complaint: ComplaintDTO) {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("#${complaint.id}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text(
+                        "#${complaint.id}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF212121)
+                    )
                     Surface(
                         color = if (isResolved) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
                         shape = RoundedCornerShape(20.dp)
@@ -263,6 +268,15 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = Color(0xFFFF6B6B),
+        focusedLabelColor = Color(0xFFFF6B6B),
+        unfocusedBorderColor = Color(0xFFE0E0E0),
+        focusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF212121),
+        unfocusedLabelColor = Color(0xFF757575)
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -286,7 +300,8 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
                     Text(
                         "Lodge a Complaint",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF212121)
                     )
                 }
                 Spacer(modifier = Modifier.height(20.dp))
@@ -296,10 +311,7 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFFF6B6B),
-                        focusedLabelColor = Color(0xFFFF6B6B)
-                    ),
+                    colors = textFieldColors,
                     shape = RoundedCornerShape(16.dp)
                 )
             }

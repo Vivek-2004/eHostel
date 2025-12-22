@@ -1,8 +1,17 @@
 package com.nshm.hostelout.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -17,12 +26,32 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Title
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -71,7 +100,7 @@ fun NoticeScreen(onNavigateToCreate: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.End
             ) {
-                // Refresh Button for Everyone
+                // Refresh Button
                 FloatingActionButton(
                     onClick = { fetchNotices() },
                     containerColor = Color.White,
@@ -106,7 +135,9 @@ fun NoticeScreen(onNavigateToCreate: () -> Unit) {
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
-                        color = if (userRole == SessionManager.UserRole.WARDEN) Color(0xFF7B1FA2) else Color(0xFF667eea)
+                        color = if (userRole == SessionManager.UserRole.WARDEN) Color(0xFF7B1FA2) else Color(
+                            0xFF667eea
+                        )
                     )
                 }
             } else if (notices.isEmpty()) {
@@ -140,15 +171,29 @@ fun NoticeScreen(onNavigateToCreate: () -> Unit) {
                             onDelete = {
                                 scope.launch {
                                     try {
-                                        val res = RetrofitClient.apiService.deleteNotice(notice.id!!)
+                                        val res =
+                                            RetrofitClient.apiService.deleteNotice(notice.id!!)
+                                        // 200 OK means success, even if body is plain text
                                         if (res.isSuccessful) {
-                                            Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                "Deleted Successfully",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                             fetchNotices()
                                         } else {
-                                            Toast.makeText(context, "Failed", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                "Failed: ${res.code()}",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
                                     } catch (e: Exception) {
-                                        Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "Error: ${e.message}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 }
                             }
@@ -184,7 +229,7 @@ fun NoticeItemCard(notice: NoticeDTO, isWarden: Boolean, onDelete: () -> Unit) {
                     if (notice.createdAt != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = notice.createdAt.toString().take(10), // Simple formatting
+                            text = notice.createdAt.toString().take(10),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF757575)
                         )
@@ -193,7 +238,11 @@ fun NoticeItemCard(notice: NoticeDTO, isWarden: Boolean, onDelete: () -> Unit) {
 
                 if (isWarden) {
                     IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFE53935))
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = Color(0xFFE53935)
+                        )
                     }
                 }
             }
@@ -221,7 +270,11 @@ fun NoticeFormScreen(onBack: () -> Unit) {
 
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = Color(0xFF7B1FA2),
-        focusedLabelColor = Color(0xFF7B1FA2)
+        focusedLabelColor = Color(0xFF7B1FA2),
+        unfocusedBorderColor = Color(0xFFBDBDBD),
+        focusedTextColor = Color(0xFF212121),
+        unfocusedTextColor = Color(0xFF212121),
+        unfocusedLabelColor = Color(0xFF757575)
     )
 
     Scaffold(
@@ -249,7 +302,7 @@ fun NoticeFormScreen(onBack: () -> Unit) {
                 onValueChange = { title = it },
                 label = { Text("Title") },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Title, null) },
+                leadingIcon = { Icon(Icons.Default.Title, null, tint = Color(0xFF7B1FA2)) },
                 colors = textFieldColors,
                 singleLine = true
             )
@@ -261,7 +314,7 @@ fun NoticeFormScreen(onBack: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
-                leadingIcon = { Icon(Icons.Default.Description, null) },
+                leadingIcon = { Icon(Icons.Default.Description, null, tint = Color(0xFF7B1FA2)) },
                 colors = textFieldColors,
                 maxLines = 10
             )
@@ -276,7 +329,8 @@ fun NoticeFormScreen(onBack: () -> Unit) {
                     scope.launch {
                         try {
                             val dto = NoticeDTO(title = title, body = body)
-                            val res = RetrofitClient.apiService.createNotice(SessionManager.userId, dto)
+                            val res =
+                                RetrofitClient.apiService.createNotice(SessionManager.userId, dto)
                             if (res.isSuccessful) {
                                 Toast.makeText(context, "Published", Toast.LENGTH_SHORT).show()
                                 onBack()
@@ -284,7 +338,8 @@ fun NoticeFormScreen(onBack: () -> Unit) {
                                 Toast.makeText(context, "Failed", Toast.LENGTH_SHORT).show()
                             }
                         } catch (e: Exception) {
-                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT)
+                                .show()
                         } finally {
                             isSubmitting = false
                         }

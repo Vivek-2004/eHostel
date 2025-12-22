@@ -8,6 +8,7 @@ import com.nshm.hostelout.model.NoticeDTO
 import com.nshm.hostelout.model.StudentDTO
 import com.nshm.hostelout.model.TeacherDTO
 import com.nshm.hostelout.model.WardenDTO
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -79,8 +80,12 @@ interface ApiService {
     suspend fun getAllNotices(): Response<List<NoticeDTO>>
 
     @POST("api/notices/warden/{wardenId}/publish")
-    suspend fun createNotice(@Path("wardenId") wardenId: Long, @Body dto: NoticeDTO): Response<NoticeDTO>
+    suspend fun createNotice(
+        @Path("wardenId") wardenId: Long,
+        @Body dto: NoticeDTO
+    ): Response<NoticeDTO>
 
+    // Changed return type to ResponseBody to handle plain text response
     @DELETE("api/notices/warden/{noticeId}")
-    suspend fun deleteNotice(@Path("noticeId") noticeId: Long): Response<String>
+    suspend fun deleteNotice(@Path("noticeId") noticeId: Long): Response<ResponseBody>
 }
