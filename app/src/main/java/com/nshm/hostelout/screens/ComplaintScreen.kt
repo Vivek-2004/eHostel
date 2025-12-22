@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,7 +49,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -82,13 +82,11 @@ fun ComplaintListScreen(
                 val response = RetrofitClient.apiService.getAllComplaints()
                 if (response.isSuccessful) {
                     val allComplaints = response.body() ?: emptyList()
-
                     complaints = if (SessionManager.userType == SessionManager.UserRole.STUDENT) {
                         allComplaints.filter { it.createdByStudentId == SessionManager.userId }
                     } else {
                         allComplaints
                     }.reversed()
-
                 } else {
                     Toast.makeText(context, "Failed to load complaints", Toast.LENGTH_SHORT).show()
                 }
@@ -107,22 +105,39 @@ fun ComplaintListScreen(
     Scaffold(
         containerColor = Color(0xFFF5F7FA),
         floatingActionButton = {
-            if (SessionManager.userType == SessionManager.UserRole.STUDENT) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                // Refresh Button
                 FloatingActionButton(
-                    onClick = onNavigateToCreate,
-                    containerColor = Color(0xFFFF6B6B),
-                    contentColor = Color.White,
+                    onClick = { fetchComplaints() },
+                    containerColor = Color.White,
+                    contentColor = Color(0xFFFF6B6B),
                     shape = CircleShape,
-                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                    elevation = FloatingActionButtonDefaults.elevation(6.dp),
+                    modifier = Modifier.size(48.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "New Complaint")
+                    Icon(Icons.Default.Refresh, "Refresh", modifier = Modifier.size(24.dp))
+                }
+
+                // Add Button (Student Only)
+                if (SessionManager.userType == SessionManager.UserRole.STUDENT) {
+                    FloatingActionButton(
+                        onClick = onNavigateToCreate,
+                        containerColor = Color(0xFFFF6B6B),
+                        contentColor = Color.White,
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "New Complaint")
+                    }
                 }
             }
         }
     ) { padding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             if (SessionManager.userType == SessionManager.UserRole.TEACHER) {
                 Column(
@@ -132,24 +147,19 @@ fun ComplaintListScreen(
                 ) {
                     Icon(
                         Icons.Default.Warning,
-                        contentDescription = null,
+                        null,
                         modifier = Modifier.size(64.dp),
                         tint = Color(0xFF9E9E9E)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "Access Denied",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
                         color = Color(0xFF424242)
                     )
                 }
             } else if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        color = Color(0xFFFF6B6B),
-                        strokeWidth = 3.dp
-                    )
+                    CircularProgressIndicator(color = Color(0xFFFF6B6B))
                 }
             } else if (complaints.isEmpty()) {
                 Column(
@@ -159,21 +169,14 @@ fun ComplaintListScreen(
                 ) {
                     Icon(
                         Icons.Default.Warning,
-                        contentDescription = null,
+                        null,
                         modifier = Modifier.size(64.dp),
                         tint = Color(0xFFBDBDBD)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "No complaints yet",
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color(0xFF424242),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        "Your complaints will appear here",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF757575)
+                        color = Color(0xFF424242)
                     )
                 }
             } else {
@@ -193,13 +196,10 @@ fun ComplaintListScreen(
 @Composable
 fun ComplaintItemCard(complaint: ComplaintDTO) {
     val isResolved = complaint.status.equals("Resolved", ignoreCase = true)
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(20.dp)
     ) {
         Box {
@@ -209,108 +209,46 @@ fun ComplaintItemCard(complaint: ComplaintDTO) {
                     .width(6.dp)
                     .background(
                         Brush.verticalGradient(
-                            colors = if (isResolved) {
-                                listOf(Color(0xFF43A047), Color(0xFF66BB6A))
-                            } else {
-                                listOf(Color(0xFFFF6B6B), Color(0xFFFF8E53))
-                            }
+                            if (isResolved) listOf(
+                                Color(0xFF43A047),
+                                Color(0xFF66BB6A)
+                            ) else listOf(Color(0xFFFF6B6B), Color(0xFFFF8E53))
                         )
                     )
             )
-
-            Column(
-                modifier = Modifier
-                    .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 20.dp)
-            ) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (isResolved) Color(0xFFE8F5E9)
-                                    else Color(0xFFFFEBEE)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = if (isResolved) Color(0xFF43A047) else Color(0xFFFF6B6B),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        Text(
-                            text = "#${complaint.id}",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontSize = 20.sp,
-                            color = Color(0xFF212121)
-                        )
-                    }
-
+                    Text("#${complaint.id}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     Surface(
                         color = if (isResolved) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
-                        shape = RoundedCornerShape(20.dp),
-                        shadowElevation = 2.dp
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Text(
-                            text = complaint.status ?: "Pending",
+                            complaint.status ?: "Pending",
                             color = if (isResolved) Color(0xFF2E7D32) else Color(0xFFD32F2F),
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         )
                     }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFF8F9FA)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = complaint.message,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(16.dp),
-                        lineHeight = 22.sp,
-                        color = Color(0xFF212121)
-                    )
-                }
-
+                Text(
+                    complaint.message,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFF212121)
+                )
                 if (!complaint.createdAt.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF9E9E9E))
-                        )
-                        Text(
-                            text = complaint.createdAt,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF757575),
-                            fontSize = 12.sp
-                        )
-                    }
+                    Text(
+                        complaint.createdAt,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
                 }
             }
         }
@@ -332,86 +270,46 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            ),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(4.dp),
             shape = RoundedCornerShape(20.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFFFEBEE)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        IconButton(
-                            onClick = onBack,
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0x20FF6B6B))
-                        ) {
-                            Icon(
-                                Icons.Default.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color(0xFFFF6B6B)
-                            )
-                        }
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            "Back",
+                            tint = Color(0xFFFF6B6B)
+                        )
                     }
-
                     Text(
                         "Lodge a Complaint",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF212121)
+                        fontWeight = FontWeight.Bold
                     )
                 }
-
                 Spacer(modifier = Modifier.height(20.dp))
-
                 OutlinedTextField(
-                    value = message,
-                    onValueChange = { message = it },
-                    label = {
-                        Text(
-                            text = "Describe your issue in detail",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF757575)
-                        )
-                    },
+                    value = message, onValueChange = { message = it },
+                    label = { Text("Describe your issue in detail") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
-                    maxLines = 8,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFFFF6B6B),
-                        focusedLabelColor = Color(0xFFFF6B6B),
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        focusedTextColor = Color(0xFF212121),
-                        unfocusedTextColor = Color(0xFF212121),
-                        unfocusedLabelColor = Color(0xFF757575)
+                        focusedLabelColor = Color(0xFFFF6B6B)
                     ),
-                    shape = RoundedCornerShape(16.dp),
-                    placeholder = { Text("Tell us what happened...", color = Color(0xFF9E9E9E)) }
+                    shape = RoundedCornerShape(16.dp)
                 )
             }
         }
-
         Spacer(modifier = Modifier.weight(1f))
-
         Button(
             onClick = {
                 if (message.isBlank()) {
-                    Toast.makeText(context, "Please enter a message", Toast.LENGTH_SHORT).show()
-                    return@Button
+                    Toast.makeText(context, "Please enter a message", Toast.LENGTH_SHORT)
+                        .show(); return@Button
                 }
                 isLoading = true
                 scope.launch {
@@ -424,8 +322,7 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
                         val response = RetrofitClient.apiService.createComplaint(dto)
                         if (response.isSuccessful) {
                             Toast.makeText(context, "Complaint Submitted", Toast.LENGTH_SHORT)
-                                .show()
-                            onBack()
+                                .show(); onBack()
                         } else {
                             Toast.makeText(context, "Submission Failed", Toast.LENGTH_SHORT).show()
                         }
@@ -440,26 +337,13 @@ fun ComplaintFormScreen(onBack: () -> Unit) {
                 .fillMaxWidth()
                 .height(60.dp),
             enabled = !isLoading,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFF6B6B)
-            ),
-            shape = RoundedCornerShape(16.dp),
-            elevation = ButtonDefaults.buttonElevation(6.dp)
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B6B)),
+            shape = RoundedCornerShape(16.dp)
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text(
-                    "Submit Complaint",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+            if (isLoading) CircularProgressIndicator(color = Color.White) else Text(
+                "Submit Complaint",
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

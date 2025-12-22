@@ -8,9 +8,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
@@ -36,7 +38,8 @@ sealed class BottomNavItem(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    object Home : BottomNavItem("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
+    object Home : BottomNavItem("home", "Leaves", Icons.Filled.Home, Icons.Outlined.Home)
+    object Notices : BottomNavItem("notices", "Notices", Icons.Filled.Notifications, Icons.Outlined.Notifications)
     object Complaints : BottomNavItem("complaints", "Complaints", Icons.Filled.Warning, Icons.Outlined.Warning)
     object Profile : BottomNavItem("profile", "Profile", Icons.Filled.Person, Icons.Outlined.Person)
 }
@@ -45,9 +48,14 @@ sealed class BottomNavItem(
 @Composable
 fun MainAppScreen(onSignOut: () -> Unit) {
     val mainNavController = rememberNavController()
-    var currentScreenTitle by remember { mutableStateOf(BottomNavItem.Home.title) }
-
     val userRole = SessionManager.userType
+
+    // Set landing page: Home (Leaves) for Teacher, Notices for Student/Warden
+    val startRoute = if (userRole == SessionManager.UserRole.TEACHER) BottomNavItem.Home.route else BottomNavItem.Notices.route
+
+    // Initial title
+    val initialTitle = if (userRole == SessionManager.UserRole.TEACHER) BottomNavItem.Home.title else BottomNavItem.Notices.title
+    var currentScreenTitle by remember { mutableStateOf(initialTitle) }
 
     val (topBarColor, fabColor) = when (userRole) {
         SessionManager.UserRole.STUDENT -> Pair(
@@ -132,10 +140,16 @@ fun MainAppScreen(onSignOut: () -> Unit) {
     ) { paddingValues ->
         NavHost(
             navController = mainNavController,
-            startDestination = BottomNavItem.Home.route,
+            startDestination = startRoute,
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(BottomNavItem.Home.route) { HomeScreen() }
+
+            composable(BottomNavItem.Notices.route) {
+                NoticeScreen(
+                    onNavigateToCreate = { mainNavController.navigate("new_notice") }
+                )
+            }
 
             composable(BottomNavItem.Complaints.route) {
                 ComplaintListScreen(
@@ -151,6 +165,9 @@ fun MainAppScreen(onSignOut: () -> Unit) {
             composable("new_complaint") {
                 ComplaintFormScreen(onBack = { mainNavController.popBackStack() })
             }
+            composable("new_notice") {
+                NoticeFormScreen(onBack = { mainNavController.popBackStack() })
+            }
         }
     }
 }
@@ -161,21 +178,37 @@ fun MainBottomNavigation(
     userRole: SessionManager.UserRole,
     onTitleChange: (String) -> Unit
 ) {
-    val items = if (userRole == SessionManager.UserRole.TEACHER) {
-        listOf(BottomNavItem.Home, BottomNavItem.Profile)
-    } else {
-        listOf(BottomNavItem.Home, BottomNavItem.Complaints, BottomNavItem.Profile)
+    // Define bottom nav items based on role
+    val items = when(userRole) {
+        SessionManager.UserRole.TEACHER -> listOf(
+            BottomNavItem.Home,
+            BottomNavItem.Profile
+        )
+        SessionManager.UserRole.WARDEN -> listOf(
+            BottomNavItem.Notices,
+            BottomNavItem.Home,
+            BottomNavItem.Complaints,
+            BottomNavItem.Profile
+        )
+        SessionManager.UserRole.STUDENT -> listOf(
+            BottomNavItem.Notices,
+            BottomNavItem.Home,
+            BottomNavItem.Complaints,
+            BottomNavItem.Profile
+        )
     }
 
-    var selectedItemIndex by remember { mutableStateOf(0) }
-
+    // Determine initial selected index based on current route
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    var selectedItemIndex by remember(currentRoute) {
+        mutableStateOf(items.indexOfFirst { it.route == currentRoute }.takeIf { it != -1 } ?: 0)
+    }
+
+    // Update title when route changes (handling back presses)
     LaunchedEffect(currentRoute) {
-        items.forEachIndexed { index, item ->
-            if (item.route == currentRoute) {
-                selectedItemIndex = index
-                onTitleChange(item.title)
-            }
+        val item = items.find { it.route == currentRoute }
+        if (item != null) {
+            onTitleChange(item.title)
         }
     }
 
@@ -260,18 +293,6 @@ fun MainBottomNavigation(
                         }
                     },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = when(userRole) {
-                            SessionManager.UserRole.STUDENT -> Color(0xFF667eea)
-                            SessionManager.UserRole.TEACHER -> Color(0xFF00897B)
-                            SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2)
-                        },
-                        selectedTextColor = when(userRole) {
-                            SessionManager.UserRole.STUDENT -> Color(0xFF667eea)
-                            SessionManager.UserRole.TEACHER -> Color(0xFF00897B)
-                            SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2)
-                        },
-                        unselectedIconColor = Color(0xFF9E9E9E),
-                        unselectedTextColor = Color(0xFF757575),
                         indicatorColor = Color.Transparent
                     )
                 )
@@ -284,7 +305,7 @@ fun MainBottomNavigation(
 fun androidx.navigation.NavController.currentBackStackEntryAsState(): State<androidx.navigation.NavBackStackEntry?> {
     val currentNavBackStackEntry = remember { mutableStateOf(currentBackStackEntry) }
     DisposableEffect(this) {
-        val listener = androidx.navigation.NavController.OnDestinationChangedListener { controller, destination, _ ->
+        val listener = androidx.navigation.NavController.OnDestinationChangedListener { controller, _, _ ->
             currentNavBackStackEntry.value = controller.currentBackStackEntry
         }
         addOnDestinationChangedListener(listener)

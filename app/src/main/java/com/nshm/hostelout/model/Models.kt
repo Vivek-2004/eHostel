@@ -9,7 +9,6 @@ data class AuthenticateDTO(
 
 data class AuthenticateResponseDTO(
     val message: String,
-    // FIX: Map 'correctPass' from JSON to 'isCorrectPass' in Kotlin
     @SerializedName("correctPass")
     val isCorrectPass: Boolean,
     val userType: String,
@@ -47,9 +46,9 @@ data class WardenDTO(
 
 data class LeaveDTO(
     val id: Long? = null,
-    val studentCollegeRegistrationNo: Long, // Maps to Student ID
-    val fromDate: String, // format YYYY-MM-DD
-    val toDate: String,   // format YYYY-MM-DD
+    val studentCollegeRegistrationNo: Long,
+    val fromDate: String,
+    val toDate: String,
     val reason: String,
     var status: String? = null,
     val approvedByWarden: Long? = null,
@@ -63,4 +62,12 @@ data class ComplaintDTO(
     val message: String,
     val status: String? = null,
     val createdAt: String? = null
+)
+
+data class NoticeDTO(
+    val id: Long? = null,
+    val createdAt: String? = null,
+    val title: String,
+    val body: String,
+    var createdByWardenId: Long? = null
 )

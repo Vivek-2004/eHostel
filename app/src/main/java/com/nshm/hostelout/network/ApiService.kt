@@ -4,11 +4,13 @@ import com.nshm.hostelout.model.AuthenticateDTO
 import com.nshm.hostelout.model.AuthenticateResponseDTO
 import com.nshm.hostelout.model.ComplaintDTO
 import com.nshm.hostelout.model.LeaveDTO
+import com.nshm.hostelout.model.NoticeDTO
 import com.nshm.hostelout.model.StudentDTO
 import com.nshm.hostelout.model.TeacherDTO
 import com.nshm.hostelout.model.WardenDTO
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -71,4 +73,14 @@ interface ApiService {
 
     @GET("api/complaints")
     suspend fun getAllComplaints(): Response<List<ComplaintDTO>>
+
+    // --- Notices ---
+    @GET("api/notices")
+    suspend fun getAllNotices(): Response<List<NoticeDTO>>
+
+    @POST("api/notices/warden/{wardenId}/publish")
+    suspend fun createNotice(@Path("wardenId") wardenId: Long, @Body dto: NoticeDTO): Response<NoticeDTO>
+
+    @DELETE("api/notices/warden/{noticeId}")
+    suspend fun deleteNotice(@Path("noticeId") noticeId: Long): Response<String>
 }

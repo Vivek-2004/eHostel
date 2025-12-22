@@ -36,7 +36,8 @@ fun AppNavigation(startDestination: String = Routes.LOGIN) {
         composable(Routes.SIGN_UP) {
             SignUpScreen(
                 onSignUpSuccess = {
-                    navController.navigate(Routes.MAIN_APP) {
+                    // Redirect to Login after successful registration
+                    navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
