@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -15,8 +14,26 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,8 +56,16 @@ sealed class BottomNavItem(
     val unselectedIcon: ImageVector
 ) {
     object Home : BottomNavItem("home", "Leaves", Icons.Filled.Home, Icons.Outlined.Home)
-    object Notices : BottomNavItem("notices", "Notices", Icons.Filled.Notifications, Icons.Outlined.Notifications)
-    object Complaints : BottomNavItem("complaints", "Complaints", Icons.Filled.Warning, Icons.Outlined.Warning)
+    object Notices : BottomNavItem(
+        "notices",
+        "Notices",
+        Icons.Filled.Notifications,
+        Icons.Outlined.Notifications
+    )
+
+    object Complaints :
+        BottomNavItem("complaints", "Complaints", Icons.Filled.Warning, Icons.Outlined.Warning)
+
     object Profile : BottomNavItem("profile", "Profile", Icons.Filled.Person, Icons.Outlined.Person)
 }
 
@@ -51,21 +76,25 @@ fun MainAppScreen(onSignOut: () -> Unit) {
     val userRole = SessionManager.userType
 
     // Set landing page: Home (Leaves) for Teacher, Notices for Student/Warden
-    val startRoute = if (userRole == SessionManager.UserRole.TEACHER) BottomNavItem.Home.route else BottomNavItem.Notices.route
+    val startRoute =
+        if (userRole == SessionManager.UserRole.TEACHER) BottomNavItem.Home.route else BottomNavItem.Notices.route
 
     // Initial title
-    val initialTitle = if (userRole == SessionManager.UserRole.TEACHER) BottomNavItem.Home.title else BottomNavItem.Notices.title
+    val initialTitle =
+        if (userRole == SessionManager.UserRole.TEACHER) BottomNavItem.Home.title else BottomNavItem.Notices.title
     var currentScreenTitle by remember { mutableStateOf(initialTitle) }
 
-    val (topBarColor, fabColor) = when (userRole) {
+    val (topBarColor, _) = when (userRole) {
         SessionManager.UserRole.STUDENT -> Pair(
             listOf(Color(0xFF667eea), Color(0xFF764ba2)),
             Color(0xFF667eea)
         )
+
         SessionManager.UserRole.TEACHER -> Pair(
             listOf(Color(0xFF00897B), Color(0xFF00695C)),
             Color(0xFF00897B)
         )
+
         SessionManager.UserRole.WARDEN -> Pair(
             listOf(Color(0xFF7B1FA2), Color(0xFF6A1B9A)),
             Color(0xFF7B1FA2)
@@ -118,32 +147,17 @@ fun MainAppScreen(onSignOut: () -> Unit) {
                 userRole = userRole,
                 onTitleChange = { currentScreenTitle = it }
             )
-        },
-        floatingActionButton = {
-            if (currentScreenTitle == BottomNavItem.Home.title &&
-                userRole == SessionManager.UserRole.STUDENT) {
-                FloatingActionButton(
-                    containerColor = fabColor,
-                    contentColor = Color.White,
-                    onClick = { mainNavController.navigate("new_request") },
-                    shape = CircleShape,
-                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "New Leave Request",
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
         }
+        // FloatingActionButton removed from here and moved to HomeScreen
     ) { paddingValues ->
         NavHost(
             navController = mainNavController,
             startDestination = startRoute,
             modifier = Modifier.padding(paddingValues)
         ) {
-            composable(BottomNavItem.Home.route) { HomeScreen() }
+            composable(BottomNavItem.Home.route) {
+                HomeScreen(onNavigateToCreate = { mainNavController.navigate("new_request") })
+            }
 
             composable(BottomNavItem.Notices.route) {
                 NoticeScreen(
@@ -179,17 +193,19 @@ fun MainBottomNavigation(
     onTitleChange: (String) -> Unit
 ) {
     // Define bottom nav items based on role
-    val items = when(userRole) {
+    val items = when (userRole) {
         SessionManager.UserRole.TEACHER -> listOf(
             BottomNavItem.Home,
             BottomNavItem.Profile
         )
+
         SessionManager.UserRole.WARDEN -> listOf(
             BottomNavItem.Notices,
             BottomNavItem.Home,
             BottomNavItem.Complaints,
             BottomNavItem.Profile
         )
+
         SessionManager.UserRole.STUDENT -> listOf(
             BottomNavItem.Notices,
             BottomNavItem.Home,
@@ -248,7 +264,7 @@ fun MainBottomNavigation(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             fontSize = if (isSelected) 13.sp else 12.sp,
                             color = if (isSelected) {
-                                when(userRole) {
+                                when (userRole) {
                                     SessionManager.UserRole.STUDENT -> Color(0xFF667eea)
                                     SessionManager.UserRole.TEACHER -> Color(0xFF00897B)
                                     SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2)
@@ -264,10 +280,18 @@ fun MainBottomNavigation(
                                 Modifier
                                     .clip(CircleShape)
                                     .background(
-                                        when(userRole) {
-                                            SessionManager.UserRole.STUDENT -> Color(0xFF667eea).copy(alpha = 0.15f)
-                                            SessionManager.UserRole.TEACHER -> Color(0xFF00897B).copy(alpha = 0.15f)
-                                            SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2).copy(alpha = 0.15f)
+                                        when (userRole) {
+                                            SessionManager.UserRole.STUDENT -> Color(0xFF667eea).copy(
+                                                alpha = 0.15f
+                                            )
+
+                                            SessionManager.UserRole.TEACHER -> Color(0xFF00897B).copy(
+                                                alpha = 0.15f
+                                            )
+
+                                            SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2).copy(
+                                                alpha = 0.15f
+                                            )
                                         }
                                     )
                                     .padding(8.dp)
@@ -281,7 +305,7 @@ fun MainBottomNavigation(
                                 contentDescription = item.title,
                                 modifier = Modifier.size(24.dp),
                                 tint = if (isSelected) {
-                                    when(userRole) {
+                                    when (userRole) {
                                         SessionManager.UserRole.STUDENT -> Color(0xFF667eea)
                                         SessionManager.UserRole.TEACHER -> Color(0xFF00897B)
                                         SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2)
@@ -305,9 +329,10 @@ fun MainBottomNavigation(
 fun androidx.navigation.NavController.currentBackStackEntryAsState(): State<androidx.navigation.NavBackStackEntry?> {
     val currentNavBackStackEntry = remember { mutableStateOf(currentBackStackEntry) }
     DisposableEffect(this) {
-        val listener = androidx.navigation.NavController.OnDestinationChangedListener { controller, _, _ ->
-            currentNavBackStackEntry.value = controller.currentBackStackEntry
-        }
+        val listener =
+            androidx.navigation.NavController.OnDestinationChangedListener { controller, _, _ ->
+                currentNavBackStackEntry.value = controller.currentBackStackEntry
+            }
         addOnDestinationChangedListener(listener)
         onDispose {
             removeOnDestinationChangedListener(listener)

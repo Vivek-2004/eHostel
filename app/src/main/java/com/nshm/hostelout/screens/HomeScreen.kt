@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -54,7 +55,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onNavigateToCreate: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var leaves by remember { mutableStateOf<List<LeaveDTO>>(emptyList()) }
@@ -105,28 +106,49 @@ fun HomeScreen() {
     Scaffold(
         containerColor = Color(0xFFF5F7FA),
         floatingActionButton = {
-            // Refresh Button for Everyone
-            FloatingActionButton(
-                onClick = { fetchData() },
-                containerColor = when (userRole) {
-                    SessionManager.UserRole.TEACHER -> Color(0xFF00897B)
-                    SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2)
-                    else -> Color.White
-                },
-                contentColor = when (userRole) {
-                    SessionManager.UserRole.TEACHER -> Color.White
-                    SessionManager.UserRole.WARDEN -> Color.White
-                    else -> Color(0xFF667eea)
-                },
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(if (userRole == SessionManager.UserRole.STUDENT) 6.dp else 8.dp),
-                modifier = if (userRole == SessionManager.UserRole.STUDENT) Modifier.size(48.dp) else Modifier
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.End
             ) {
-                Icon(
-                    Icons.Default.Refresh,
-                    "Refresh",
-                    modifier = if (userRole == SessionManager.UserRole.STUDENT) Modifier.size(24.dp) else Modifier
-                )
+                // Refresh Button
+                FloatingActionButton(
+                    onClick = { fetchData() },
+                    containerColor = when (userRole) {
+                        SessionManager.UserRole.TEACHER -> Color(0xFF00897B)
+                        SessionManager.UserRole.WARDEN -> Color(0xFF7B1FA2)
+                        else -> Color.White
+                    },
+                    contentColor = when (userRole) {
+                        SessionManager.UserRole.TEACHER -> Color.White
+                        SessionManager.UserRole.WARDEN -> Color.White
+                        else -> Color(0xFF667eea)
+                    },
+                    shape = CircleShape,
+                    elevation = FloatingActionButtonDefaults.elevation(6.dp),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        "Refresh",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Add Button (Student only)
+                if (userRole == SessionManager.UserRole.STUDENT) {
+                    FloatingActionButton(
+                        onClick = onNavigateToCreate,
+                        containerColor = Color(0xFF667eea),
+                        contentColor = Color.White,
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "New Leave Request"
+                        )
+                    }
+                }
             }
         }
     ) { padding ->
